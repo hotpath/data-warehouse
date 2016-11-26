@@ -4,7 +4,7 @@
 
 - [Home page](http://hackathon-cein.com)
 - [Dataset](http://hackathon-cein.com/go.html)
-- [Documentation](../wiki)
+- [Documentation](../../wiki)
 
 ## Team
 
