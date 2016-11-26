@@ -1,5 +1,7 @@
 #!/usr/bin/python
+from __future__ import division
 
+import copy
 from Tkinter import *
 from sympy.functions.combinatorial.numbers import fibonacci
 
@@ -49,18 +51,23 @@ class ViewGen:
             self.checkered(canvas)
 
         # * densities row col visits floor minute
-        totalVisits = 0;
-        for d in data:
-          totalVisits+= d['visits']
         for d in data:
             row = d['row'] / 2
             col = d['col'] / 2
-            visitasCelda = d['visits'] / totalVisits
-            print(visitasCelda)
+            visitasCelda = int(d['visits'])
+
+            if visitasCelda < 500:
+                color = 'green'
+            elif visitasCelda > 500 and visitasCelda < 750:
+                color = 'yellow'
+            elif visitasCelda >= 750:
+                color = 'red'
+
             canvas.create_rectangle(row, col, row + self.tam_rejilla,
                                     col + self.tam_rejilla, width=0,
-                                    fill="green",
-                                    stipple="gray50")
+                                    fill=color,
+                                    stipple="gray75")
+
         if self.ouput_file == 1:
             self.save_to_file(canvas)
 
