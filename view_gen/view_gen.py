@@ -1,8 +1,13 @@
 #!/usr/bin/python
 
 from Tkinter import *
+from sympy.functions.combinatorial.numbers import fibonacci
+
 from PIL import ImageTk
 from pymongo import MongoClient
+import os
+import datetime
+import time
 
 
 class ViewGen:
@@ -49,7 +54,12 @@ class ViewGen:
                                     stipple="gray50")
 
             # TODO print to file w.postscript(file="file_name.ps", colormode='color')
-
+        canvas.postscript()
+        canvas.postscript(file='tmp.ps', x=0, y=0, height=self.canvas_height, width=self.canvas_width)
+        ts = time.time()
+        st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+        filename = 'image'+st+'.png'
+        os.system('convert -density 300 tmp.ps -resize 1192x842 ' + filename)
     def get_data_floor(self, floor, minute=None):
 
         search = {"floor": floor}
