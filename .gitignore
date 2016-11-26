@@ -1,4 +1,7 @@
 .idea
+view_gen/tmp.ps
+view_gen/output/*
+
 # docker volumes
 /volumes
 
