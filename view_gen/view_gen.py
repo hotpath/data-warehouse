@@ -18,6 +18,11 @@ class ViewGen:
         self.canvas_width = 1192
         self.canvas_height = 842
         self.conversion_factor = 2
+        try:
+            self.ouput_file = int(sys.argv[2])
+        except IndexError:
+            self.ouput_file = 0
+
         self.mongo = MongoClient('mongodb://localhost:27017')
         self.db = self.mongo.cein
 
@@ -52,14 +57,19 @@ class ViewGen:
                                     col + self.tam_rejilla, width=0,
                                     fill="green",
                                     stipple="gray50")
+        if self.ouput_file == 1:
+            self.save_to_file(canvas)
 
-            # TODO print to file w.postscript(file="file_name.ps", colormode='color')
+    def save_to_file(self, canvas):
+
         canvas.postscript()
         canvas.postscript(file='tmp.ps', x=0, y=0, height=self.canvas_height, width=self.canvas_width)
         ts = time.time()
-        st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-        filename = 'image'+st+'.png'
-        os.system('convert -density 300 tmp.ps -resize 1192x842 ' + filename)
+        st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d_%H_%M_%S')
+        filename = 'image' + st + '.png'
+        os.system('convert -density 300 tmp.ps -resize ' + str(self.canvas_width) + 'x' + str(
+            self.canvas_height) + ' ' + 'output/' + filename)
+
     def get_data_floor(self, floor, minute=None):
 
         search = {"floor": floor}
@@ -79,7 +89,8 @@ class ViewGen:
                 self.fill_floor(floor, self.get_data_floor(floor))
             else:
                 raise IndexError
-            mainloop()
+            if self.ouput_file != 1:
+                mainloop()
         except IndexError:
             print("That floor not exists ....")
 
