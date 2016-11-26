@@ -1,8 +1,11 @@
+#!/usr/bin/python
+
 from Tkinter import *
 from PIL import ImageTk
 from pymongo import MongoClient
 
-class Process:
+
+class ViewGen:
     def __init__(self):
         self.window = Tk()
         self.rejilla = False
@@ -30,17 +33,21 @@ class Process:
         canvas = Canvas(self.window, width=self.canvas_width, height=self.canvas_height)
         canvas.create_image(0, 0, image=self.floors[floor_number], anchor=NW)
         canvas.pack()
+
         if self.rejilla:
             self.checkered(canvas)
 
         # * densities row col visits floor minute
 
         for d in data:
-            canvas.create_rectangle(d.row, d.col, d.row + self.tam_rejilla, d.col + self.tam_rejilla, width=0,
+            row = d['row'] / 2
+            col = d['col'] / 2
+            canvas.create_rectangle(row, col, row + self.tam_rejilla,
+                                    col + self.tam_rejilla, width=0,
                                     fill="green",
                                     stipple="gray50")
 
-        # TODO print to file w.postscript(file="file_name.ps", colormode='color')
+            # TODO print to file w.postscript(file="file_name.ps", colormode='color')
 
     def get_data_floor(self, floor, minute=None):
 
@@ -50,15 +57,21 @@ class Process:
 
         data = self.db.densities.find(search)
 
+        return data
+
     def run(self):
 
-        self.fill_floor(1, self.get_data_floor(1))
-        self.fill_floor(2, self.get_data_floor(2))
-        self.fill_floor(3, self.get_data_floor(3))
+        try:
 
-        mainloop()
-
+            floor = int(sys.argv[1])
+            if floor in [0, 1, 2]:
+                self.fill_floor(floor, self.get_data_floor(floor))
+            else:
+                raise IndexError
+            mainloop()
+        except IndexError:
+            print("That floor not exists ....")
 
 if __name__ == '__main__':
-    test_data()
-    # v = Process().run()
+    p = ViewGen()
+    p.run()
