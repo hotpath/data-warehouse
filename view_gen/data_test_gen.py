@@ -12,8 +12,8 @@ def generate():
     for d in range(1000):
         db.densities.insert_one({
             "floor": randrange(0, 2),
-            "row": randrange(0, 2384),
-            "col": randrange(0, 1684),
+            "row": randrange(479, 1605),
+            "col": randrange(582, 1271),
             "visits": randrange(2, 50),
             "minute": randrange(0, 60)
         })

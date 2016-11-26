@@ -12,6 +12,7 @@ class ViewGen:
         self.tam_rejilla = 10
         self.canvas_width = 1192
         self.canvas_height = 842
+        self.conversion_factor = 2
         self.mongo = MongoClient('mongodb://localhost:27017')
         self.db = self.mongo.cein
 
@@ -40,8 +41,8 @@ class ViewGen:
         # * densities row col visits floor minute
 
         for d in data:
-            row = d['row'] / 2
-            col = d['col'] / 2
+            row = int(d['row'] / self.conversion_factor)
+            col = int(d['col'] / self.conversion_factor)
             canvas.create_rectangle(row, col, row + self.tam_rejilla,
                                     col + self.tam_rejilla, width=0,
                                     fill="green",
@@ -71,6 +72,7 @@ class ViewGen:
             mainloop()
         except IndexError:
             print("That floor not exists ....")
+
 
 if __name__ == '__main__':
     p = ViewGen()
