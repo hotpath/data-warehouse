@@ -43,10 +43,14 @@ class ViewGen:
             self.checkered(canvas)
 
         # * densities row col visits floor minute
-
+        totalVisits = 0;
+        for d in data:
+          totalVisits+= d['visits']
         for d in data:
             row = d['row'] / 2
             col = d['col'] / 2
+            visitasCelda = d['visits'] / totalVisits
+            print(visitasCelda)
             canvas.create_rectangle(row, col, row + self.tam_rejilla,
                                     col + self.tam_rejilla, width=0,
                                     fill="green",
