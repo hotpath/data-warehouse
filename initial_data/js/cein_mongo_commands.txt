@@ -1,0 +1,136 @@
+
+# ds_elisardo.js
+db.dataset.find().limit(10).forEach(
+	function(location) { 
+		var reg = new Object();
+		reg.id = location.id;
+		reg.x = parseInt(location.x);
+		reg.y = parseInt(location.y);
+		reg.z = 0;
+		reg.s = new ISODate(location.date).getTime();
+		reg.e = new ISODate(location.date).getTime() + 1;
+		printjson(reg);
+		print(',');
+	});
+
+
+// mongo --quiet cein ds_elisardo.js | head -20 > ds_elisardo.json 
+
+// limits by floor
+db.dataset.find({planta: 0}).sort({x: 1}).limit(1)
+db.dataset.find({planta: 0}).sort({x: -1}).limit(1)
+
+
+///////// generate collections
+
+// locations collection
+function generate_locations() {
+	db.locations.remove();
+	db.dataset.find().forEach(function(location) { 
+		var doc =  { 
+			device: location.id, 
+			ts: new ISODate(location.date).getTime() / 1000, 
+			floor: location.planta, 
+			x: parseInt(location.x), 
+			y: parseInt(location.y) 
+			};  
+		db.locations.insert(doc);
+		});
+	db.locations.ensureIndex({ device: 1 });
+}
+
+// visits collection
+function new_visit(device_id, locations) {
+	var visit = { device: device_id };
+	visit.locations = locations;
+	visit.start_ts = locations[0].ts;
+	visit.end_ts = locations[locations.length - 1].ts;
+	db.visits.insert(visit);
+}
+function generate_visits() {
+	db.visits.remove();
+	db.locations.distinct("device").forEach(function(device_id){ 
+		var all_locations = db.locations.find({device: device_id}).sort({ts:1});
+		var locations = [];
+		var last_ts = null;
+		all_locations.forEach(function (location){
+			if (last_ts != null && (location.ts - last_ts > 3600 * 5)) {
+				new_visit(device_id, locations);
+				last_ts = null;
+				locations = [];
+			}
+			locations.push({x: location.x, y: location.y, ts: location.ts});
+		});
+		new_visit(device_id, locations);
+	});
+	db.visits.ensureIndex({start_ts: 1});
+	db.visits.ensureIndex({end_ts: 1});
+}
+
+
+
+// generate densities
+function touch_grid(grid, row_count, size_pixels, x, y) {
+	var row = x / size_pixels;
+	var col = y / size_pixels;
+	var index = (row_count * row) + col;
+	grid[index] = true;
+}
+function new_density(sum_grid, row_count, ts, pixels) {
+	var density = { minute: ts, pixels: pixels, floor: 0}
+
+	for (var i = sum_grid.length - 1; i >= 0; i--) {
+		if (grid.hasOwnProperty(i)) {
+			density.col = i % row_count;
+			density.row = (i - col) / row_count;
+			density.visits = sum_grid[i];
+			db.densities.insert();
+		}
+	}
+
+	db.densities.insert(density);
+}
+function sum_grid(grid_sum, grid, row_count) {
+	for (var i = grid.length - 1; i >= 0; i--) {
+		if (grid.hasOwnProperty(i)) {
+			if (grid_sum.hasOwnProperty(i)) {
+				grid[i]++;
+			} else
+				grid[i] = 1;
+			}
+		}
+	}	
+}
+function generate_densities(seconds_interval, size_pixels) {
+	db.densities.remove();
+	var min_x = db.locations.find(null, {x: true}).sort({x: 1}).limit(1)[0].x;
+	var max_x = db.locations.find(null, {x: true}).sort({x: -1}).limit(1)[0].x;
+	var min_y = db.locations.find(null, {y: true}).sort({y: 1}).limit(1)[0].y;
+	var max_y = db.locations.find(null, {y: true}).sort({y: -1}).limit(1)[0].y;
+	var row_count = (max_x / size_pixels) + 1;
+	var ts_from = db.visits.find(null, {start_ts:true}).sort({start_ts: 1}).limit(1)[0].start_ts
+	var ts_to = db.visits.find(null, {end_ts:true}).sort({start_ts: -1}).limit(1)[0].end_ts
+	ts_from -= ts_from % seconds_interval;
+	min_x -= min_x % size_pixels;
+	mix_y -= min_y % size_pixels;
+	var ts1 = ts_from;
+	while (ts1 <= ts_to) {
+		var grid_sum = {};
+		var ts2 = ts1 + seconds_interval;
+		var visits = db.visits.find({ $and: [ {start_ts: {$gte: ts1 }}, {start_ts: { $lt: ts2 }}] }, {locations: true});
+		var locations = visit.forEach(function(visit){
+			var grid = {};
+			visit.locations.forEach(location) {
+				if (location.floor == 0) {
+					touch_grid(grid, row_count, size_pixels, location.x, location.y);
+				}
+			});
+			sum_grid(grid_sum, grid, row_count);
+		});
+		new_density(sum_grid, row_count, ts1, size_pixels);
+		ts1 += seconds_interval;
+	}
+}
+
+
+
